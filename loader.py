@@ -4,15 +4,19 @@ import tkinter as tk
 from tkinter import filedialog
 
 
-def browse_for_file() -> str:
+def browse_for_file(title: str = "Select File") -> str:
     """Open a Windows file-browse dialog and return the selected path."""
     root = tk.Tk()
     root.withdraw()  # hide main tk window
 
     file_path = filedialog.askopenfilename(
-        title="Select Togal Export",
-        filetypes=[("Excel Files", "*.xlsx"), ("All Files", "*.*")]
+        title=title,
+        filetypes=[
+            ("Excel Files", "*.xlsx *.xlsm"),
+            ("All Files", "*.*"),
+        ]
     )
+
     root.destroy()
     return file_path
 

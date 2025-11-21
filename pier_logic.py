@@ -51,16 +51,22 @@ def _ft_to_in(value_ft: float) -> float:
 
 def is_pier_row(row: ParsedRow) -> bool:
     """
-    Decide if a ParsedRow represents a drilled pier condition.
+    Decide if a ParsedRow represents a *drilled pier* (not pier caps).
     """
     name = _normalize_upper(row.classification)
     folder = _normalize_upper(row.folder)
 
-    if "PIER" in name:
-        return True
-    if "PIER" in folder:
+    # 1) True drilled piers: classification starts with "PIER"
+    #    e.g. "PIER - 1", "PIER - 2"
+    if name.startswith("PIER"):
         return True
 
+    # 2) Fallback: folder explicitly says something like "DRILLED PIER TAKEOFF"
+    #    but avoid generic "Pier Caps" etc.
+    if "DRILLED" in folder and "PIER" in folder:
+        return True
+
+    # 3) Everything else (e.g. "PC - 1", "PC - 2" in "Pier Caps") is NOT a drilled pier
     return False
 
 
