@@ -7,6 +7,8 @@ from pier_template_writer import write_piers_to_template
 
 import tkinter as tk
 from tkinter import filedialog
+from pathlib import Path
+
 
 def main():
     # 1) Select the Togal export
@@ -18,8 +20,8 @@ def main():
         return
 
     # 2) Select the BLANK estimating template
-    print("\nSelect your BLANK estimating template (.xlsx) file...")
-    template_path = browse_for_file("Select BLANK estimating template (.xlsx) file")
+    print("\nSelect your BLANK estimating template (.xlsx/.xlsm) file...")
+    template_path = browse_for_file("Select BLANK estimating template (.xlsx/.xlsm) file")
 
     if not template_path:
         print("No template file selected. Exiting.")
@@ -44,11 +46,6 @@ def main():
     # -------------------------------------------------------
     pier_metrics = build_pier_metrics(parsed_rows)
     print_pier_metrics_summary(pier_metrics)
-
-    # -------------------------------------------------------
-    # Layer 3: User chooses where to save completed file
-    # -------------------------------------------------------
-    from pathlib import Path
 
     # -------------------------------------------------------
     # Layer 3: User chooses where to save completed file
@@ -82,21 +79,16 @@ def main():
         print("No output file selected; skipping template write.")
         return
 
-    # PASS THE EXTENSION THROUGH
+    # -------------------------------------------------------
+    # Layer 3: Write pier data into template
+    # -------------------------------------------------------
     write_piers_to_template(
         template_path=template_path,
         output_path=output_path,
-        pier_metrics=pier_metrics
+        pier_metrics=pier_metrics,
     )
 
     print(f"\nWrote pier data into template: {output_path}")
-
-    if output_path:
-        write_piers_to_template(template_path, output_path, pier_metrics)
-        print(f"\nWrote pier data into template: {output_path}")
-    else:
-        print("No output file selected; skipping template write.")
-
     print("\n=== Done in main.py ===")
 
 

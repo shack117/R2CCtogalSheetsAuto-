@@ -31,7 +31,7 @@ class ParsedRow:
     length_uom: Optional[str]
 
     breakdown_tier: Optional[str]
-
+    breakdown_item: Optional[str]
 
 def _get_number(row: pd.Series, col_name: str) -> Optional[float]:
     """Return a float if the cell is numeric, otherwise None."""
@@ -79,6 +79,7 @@ def parse_row(row: pd.Series) -> ParsedRow:
     length_uom = _get_text(row, "Length UOM")
 
     breakdown_tier = _get_text(row, "Breakdown Tier")
+    breakdown_item = _get_text(row, "Breakdown Item")
 
     return ParsedRow(
         folder=folder,
@@ -96,6 +97,7 @@ def parse_row(row: pd.Series) -> ParsedRow:
         length=length,
         length_uom=length_uom,
         breakdown_tier=breakdown_tier,
+        breakdown_item=breakdown_item,
     )
 
 

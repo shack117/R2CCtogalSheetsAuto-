@@ -5,6 +5,8 @@ from typing import Dict, Tuple
 
 from openpyxl import load_workbook
 from pier_logic import PierMetrics
+from openpyxl.worksheet.datavalidation import DataValidation
+
 
 # Row label keywords found in column A of the pier section on BID sheet
 ROW_LABELS = {
@@ -24,6 +26,9 @@ ROW_LABELS = {
     # but keep keywords here for future logging if needed.
     "total_length_lf": ["TOTAL LENGTH LF PIERS", "TOTAL LENGTH", "TOTAL LF"],
 }
+
+# Row where we store the breakdown item name for the pier section
+PIER_BREAKDOWN_ROW = 77
 
 
 def _find_row(sheet, keywords):
@@ -70,6 +75,43 @@ def _get_template_sheet(wb):
     # fallback: first sheet if BID was renamed in the future
     return wb[wb.sheetnames[0]]
 
+def _clone_data_validations(source_sheet, target_sheet):
+    """
+    Copy all data validation rules from source_sheet to target_sheet.
+
+    This is needed because openpyxl's copy_worksheet does not reliably
+    copy data validations (drop-downs) on all versions.
+    """
+    dv_list = getattr(source_sheet.data_validations, "dataValidation", [])
+    if not dv_list:
+        return
+
+    for dv in dv_list:
+        # Rebuild a new DataValidation with the same properties
+        new_dv = DataValidation(
+            type=dv.type,
+            formula1=dv.formula1,
+            formula2=dv.formula2,
+            allow_blank=dv.allow_blank,
+            operator=dv.operator,
+            showDropDown=dv.showDropDown,
+            promptTitle=dv.promptTitle,
+            prompt=dv.prompt,
+            errorTitle=dv.errorTitle,
+            error=dv.error,
+            errorStyle=dv.errorStyle,
+            imeMode=dv.imeMode,
+            showInputMessage=dv.showInputMessage,
+            showErrorMessage=dv.showErrorMessage,
+        )
+
+        # Copy all cell ranges where this validation applies
+        for cell_range in dv.ranges:
+            new_dv.add(str(cell_range))
+
+        # Attach to the new sheet
+        target_sheet.add_data_validation(new_dv)
+
 
 def _create_tier_sheets(wb, tiers):
     """
@@ -85,9 +127,14 @@ def _create_tier_sheets(wb, tiers):
         safe_title = _make_safe_sheet_title(tier)
         sheet = wb.copy_worksheet(template_sheet)
         sheet.title = safe_title
+
+        # NEW: ensure data validation (drop-downs) are also present
+        _clone_data_validations(template_sheet, sheet)
+
         tier_to_sheet[tier] = sheet
 
     return tier_to_sheet
+
 
 
 def write_piers_to_template(
@@ -193,6 +240,12 @@ def write_piers_to_template(
                 cell = sheet.cell(row=row, column=col)
                 cell.value = value
                 print(f"    Wrote {field} = {value} → {cell.coordinate}")
+
+            label = metrics.breakdown_item or metrics.tier
+            if label:
+                label_cell = sheet.cell(row=PIER_BREAKDOWN_ROW, column=col)
+                label_cell.value = label
+                print(f"    Wrote breakdown label '{label}' → {label_cell.coordinate}")
 
     wb.save(output_path)
     print(f"\nSaved completed estimate: {output_path}\n")

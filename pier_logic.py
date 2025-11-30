@@ -21,6 +21,8 @@ class PierMetrics:
     count: float                    # number of piers (EA)
     total_length_lf: Optional[float]  # depth_ft * count (LF)
 
+    breakdown_item: Optional[str] = None
+
 
 # ---------- helpers ----------
 
@@ -73,10 +75,6 @@ def is_pier_row(row: ParsedRow) -> bool:
 # ---------- core layer-2 logic ----------
 
 def build_pier_metrics(rows: List[ParsedRow]) -> Dict[Tuple[str, str], PierMetrics]:
-    """
-    Aggregate ParsedRow objects into PierMetrics, grouped by:
-       (tier, classification)
-    """
     acc: Dict[Tuple[str, str], Dict[str, Optional[float]]] = {}
 
     for r in rows:
@@ -93,9 +91,15 @@ def build_pier_metrics(rows: List[ParsedRow]) -> Dict[Tuple[str, str], PierMetri
                 "bell_dia_in": None,
                 "depth_ft": None,
                 "count": 0.0,
+                "breakdown_item": None,      # <-- NEW
             }
 
         m = acc[key]
+
+        # NEW: capture breakdown item text once per (tier, classification)
+        item = _normalize(r.breakdown_item)
+        if item and not m["breakdown_item"]:
+            m["breakdown_item"] = item
 
         # --- Shaft diameter from Width (+ UOM) ---
         if r.width is not None and r.width_uom:
@@ -158,6 +162,7 @@ def build_pier_metrics(rows: List[ParsedRow]) -> Dict[Tuple[str, str], PierMetri
             depth_ft=depth_ft,
             count=count,
             total_length_lf=total_length,
+            breakdown_item=m["breakdown_item"],
         )
 
     return result
